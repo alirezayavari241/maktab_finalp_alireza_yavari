@@ -2,71 +2,88 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ImageSlider from '../components/Layouts/Slider';
 import Header from '../components/Headermenu';
-
+import axios from 'axios';
+import ProductSlider from '../components/Productlist';
+import ImageCarousel from '../components/ImageCarousel';
+import ProductSlider2 from '../components/Productlistsec';
+import CategoriesList from '../components/Categorieslist';
+import Bfooter from '../components/Footer';
+import '../../src/index.css'
 function Home() {
+  
   const navigate = useNavigate();
   const [hasAccessToken, setHasAccessToken] = useState(false);
+  const [products, setProducts] = useState([]);
+  const categoryId = '66ec0ed93ad19494d8d2c80c';
+  const categoryId2 = '66ec0efd3ad19494d8d2c814';
 
   useEffect(() => {
     const accessToken = localStorage.getItem('accessToken');
     if (accessToken) {
       setHasAccessToken(true);
     }
+
+    const fetchProducts = async () => {
+      try {
+        const response = await axios.get('http://localhost:8000/api/products?page=1&limit=100');
+        const filteredProducts = response.data.data.products.filter(product => product.category._id === categoryId);
+        setProducts(filteredProducts);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      }
+    };
+
+    fetchProducts();
   }, []);
 
   const handleLoginClick = () => {
     if (hasAccessToken) {
-      navigate('/panel'); 
+      navigate('/panel');
     } else {
-      navigate('/login'); 
+      navigate('/login');
     }
   };
 
+
   return (
     <>
-      <div className="bg-pbg h-screen font-iransans">
-        <div className="flex flex-row-reverse justify-between w-4/5 align-middle items-center content-center mx-auto border-b-btnbg border-b-2">
-          <div className="flex">
-            <div className="absolute">
-              <img src="src/assets/icons/icons8-search-48.png" height={30} width={30} className="mt-1 ml-2" />
-            </div>
-            <input
-              type="text"
-              placeholder="جستجوی محصولات"
-              className="bg-btnbg bg-opacity-50 text-right w-64 p-2 focus:outline-none rounded-3xl h-10 placeholder:text-gray-500"
-            />
-          </div>
-          <div>
-            <img className="h-40 w-40" src="src/assets/icons/logo.png" />
-          </div>
-          <div className="flex space-x-3">
-            <div>
-              <button className="flex p-1 py-2 rounded-3xl w-32 bg-transparent border-btnbg border-2 text-btnbg hover:shadow-lg">
-                <div className="absolute ml-2">
-                  <img src="src/assets/icons/basket.png" width={25} height={25} />
-                </div>
-                <p className="ml-10">سبد خرید</p>
-              </button>
-            </div>
-            <div>
-              <button
-                className="flex p-1 py-2 rounded-3xl w-40 bg-transparent border-textcolot border-2 text-btnbg hover:shadow-lg"
-                onClick={handleLoginClick}
-              >
-                <div className="absolute ml-2">
-                  <img src="src/assets/icons/user.png" width={25} height={25} />
-                </div>
-                <p className="ml-10 text-textcolot">{hasAccessToken ? 'پنل کاربری' : 'ورود / عضویت'}</p>
-              </button>
-            </div>
-          </div>
-        </div>
-        <div className="flex mx-auto w-full justify-center">
-          <Header />
-        </div>
-        <div className="flex w-4/5 mx-auto mt-10">
+      <div className="bg-pbg font-iransans">
+        <Header/>
+        <div className="flex w-4/5 mx-auto mt-5">
           <ImageSlider />
         </div>
+        <CategoriesList/>
+        <div className='mt-14'><ProductSlider categoryId={categoryId} /></div>
+        <div className='w-4/5 mx-auto mt-14 space-y-8'>
+        <p className='text-2xl text-textcolot text-right w-full border-b-2 border-btnbg py-3'>انتشارات همکار	</p>
+        <ImageCarousel/>
+        </div>
+        <div className='mt-8'><ProductSlider2 categoryId={categoryId2} /></div>
+        <div className='w-4/5 mx-auto mt-14'>
+          <div className='w-full bg-textcolot text-center rounded-t-3xl text-white text-2xl p-4'> <p >خوشـــحالی فروشــــی لوازم تحریر</p></div>
+          <div className='w-3/12 bg-textcolot text-center rounded-b-3xl text-white text-lg p-2 mx-auto -mt-3 '> <p  className='rounded-3xl border-2 p-2 border-white w-fit mx-auto'>بزودی در بوک استور</p></div>
+          <div className='flex flex-row space-x-6'>
+          <div class="relative w-96 h-80 -mt-8">
+  <img src="https://adineh.market/wp-content/uploads/2024/06/home-khoshhali-2.jpg" alt="Image" class="w-full h-full object-cover rounded-3xl" />
+  <div class="absolute inset-0 flex items-center justify-center bg-textcolot bg-opacity-80 rounded-3xl">
+    <p class="text-white text-3xl font-bold">انواع خودکار</p>
+  </div>
+</div>
+<div class="relative w-96 h-80 mt-3">
+  <img src="https://avat-shop.ir/wp-content/uploads/2023/04/IMG_0847.jpg" alt="Image" class="w-full h-full object-cover rounded-3xl" />
+  <div class="absolute inset-0 flex items-center justify-center bg-textcolot bg-opacity-80 rounded-3xl">
+    <p class="text-white text-3xl font-bold">انواع دفتر</p>
+  </div>
+</div>
+<div class="relative w-96 h-80 -mt-8">
+  <img src="https://api2.zoomit.ir/media/2021-12-buyleeshop-638bb649da37f663eb456644" alt="Image" class="w-full h-full object-cover rounded-3xl" />
+  <div class="absolute inset-0 flex items-center justify-center bg-textcolot bg-opacity-80 rounded-3xl">
+    <p class="text-white  font-bold text-3xl">وسایل فانتزی</p>
+  </div>
+</div>
+          </div>
+        </div>
+        <Bfooter/>
       </div>
     </>
   );

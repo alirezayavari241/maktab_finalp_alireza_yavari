@@ -16,7 +16,7 @@ const Pagination = ({ totalPages, currentPage, setCurrentPage, itemsPerPage, set
 
   return (
     <>
-      <div className="flex justify-between mb-4 w-full">
+      <div className="flex justify-between mb-4 w-4/5 mx-auto">
         <div>
           <label className='flex'>
           <p className='text-textcolot'>محصول در هر صفحه</p>
@@ -41,21 +41,22 @@ const Pagination = ({ totalPages, currentPage, setCurrentPage, itemsPerPage, set
         ))}
       </div>
         <div className='flex flex-col align-middle items-center'>
-          <label className='flex'>
-          <p className='text-textcolot'>مرتب سازی بر اساس</p>
-          <select value={sortOrder} onChange={handleSortChange} className="border rounded ml-2">
+          <label className='flex w-full'>
+          <select value={sortOrder} onChange={handleSortChange} className="border rounded ml-2 w-fit h-fit">
               <option value="createdAt">تاریخ</option>
               <option value="price">قیمت</option>
               <option value="quantity">موجودی</option>
             </select>
+            <p className='text-textcolot'>مرتب سازی بر اساس</p>
+
           </label>
 
-          <label className="ml-4 flex">
-            <p className='text-textcolot'>ترتیب</p>
-            <select value={sortDirection} onChange={handleDirectionChange} className="rounded align-middle mx-auto">
+          <label className="flex w-full justify-between">
+            <select value={sortDirection} onChange={handleDirectionChange} className="border rounded ml-2 w-fit">
               <option value="asc">صعودی</option>
               <option value="desc">نزولی</option>
             </select>
+            <p className='text-textcolot'>ترتیب مرتب سازی</p>
           </label>
         </div>
       </div>

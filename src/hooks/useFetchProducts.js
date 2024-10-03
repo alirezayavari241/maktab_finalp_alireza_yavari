@@ -13,8 +13,9 @@ export const useFetchProducts = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/api/products');
+        const response = await axios.get('http://localhost:8000/api/products?page=1&limit=100');
         setProducts(response.data.data.products);
+        console.log(response.data.data.products);
       } catch (err) {
         setError('خطا در بارگذاری داده‌ها');
       } finally {
