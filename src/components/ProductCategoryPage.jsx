@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import Header from "./Headermenu";
 import Bfooter from "./Footer";
 
 const CategoryPage = () => {
   const { categoryId, subcategoryId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [sortType, setSortType] = useState("newest");
-  const [itemsPerPage, setItemsPerPage] = useState(6);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [sortType, setSortType] = useState(searchParams.get("sort") || "newest");
+  const [itemsPerPage, setItemsPerPage] = useState(Number(searchParams.get("limit")) || 6);
+  const [currentPage, setCurrentPage] = useState(Number(searchParams.get("page")) || 1);
   const [totalProducts, setTotalProducts] = useState(0);
   const navigate = useNavigate();
 
@@ -70,6 +71,14 @@ const CategoryPage = () => {
     fetchProducts(categoryId, subcategoryId, sortType, currentPage, itemsPerPage);
   }, [categoryId, subcategoryId, sortType, currentPage, itemsPerPage]);
 
+  useEffect(() => {
+    setSearchParams({
+      sort: sortType,
+      limit: itemsPerPage,
+      page: currentPage,
+    });
+  }, [sortType, itemsPerPage, currentPage, setSearchParams]);
+
   const handleCategoryClick = (catId) => {
     navigate(`/productlist/${catId}`);
   };
@@ -80,11 +89,12 @@ const CategoryPage = () => {
 
   const handleSortChange = (event) => {
     setSortType(event.target.value);
+    setCurrentPage(1); // Reset to first page
   };
 
   const handleItemsPerPageChange = (event) => {
     setItemsPerPage(Number(event.target.value));
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset to first page
   };
 
   const handlePageChange = (page) => {
@@ -95,7 +105,7 @@ const CategoryPage = () => {
 
   return (
     <>
-      <div className="font-iransans   bg-pbg">
+      <div className="font-iransans bg-pbg">
         <Header />
         <div className="flex flex-row-reverse w-4/5 mx-auto mt-8 ">
           <div className="w-1/4 h-full p-4 bg-gray-100 mr-0 text-textcolot text-right rounded-3xl">
@@ -146,9 +156,9 @@ const CategoryPage = () => {
           </div>
 
           <div className="w-3/4 ">
-            <div className="flex  items-center mx-auto space-x-4">
+            <div className="flex items-center mx-auto space-x-4">
               <div className="flex flex-row">
-                <label className=" text-lg text-textcolot mx-auto mt-1">مرتب‌سازی بر اساس</label>
+                <label className="text-lg text-textcolot mx-auto mt-1">مرتب‌سازی بر اساس</label>
                 <select
                   value={sortType}
                   onChange={handleSortChange}
@@ -186,7 +196,7 @@ const CategoryPage = () => {
                         className="flex-none w-64 border-btnbg border-2 p-4 rounded-3xl shadow-lg items-center justify-center"
                       >
                         <img
-                          src={`http://${product.images}`}
+                          src={`http://${product.images[0]}`}
                           alt={product.name}
                           className="h-48 w-48 object-cover mb-4 mx-auto"
                         />
@@ -234,7 +244,7 @@ const CategoryPage = () => {
             )}
           </div>
         </div>
-        <Bfooter/>
+        <Bfooter />
       </div>
     </>
   );

@@ -10,20 +10,21 @@ export const useFetchProducts = () => {
   const [sortOrder, setSortOrder] = useState('createdAt');
   const [sortDirection, setSortDirection] = useState('asc');
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await axios.get('http://localhost:8000/api/products?page=1&limit=100');
-        setProducts(response.data.data.products);
-        console.log(response.data.data.products);
-      } catch (err) {
-        setError('خطا در بارگذاری داده‌ها');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProducts();
-  }, []);
+  const fetchProducts = async () => {
+    setLoading(true); // برای نمایش بارگذاری
+    try {
+      const response = await axios.get(`http://localhost:8000/api/products?page=1&limit=100`);
+      setProducts(response.data.data.products);
+    } catch (err) {
+      setError('خطا در بارگذاری داده‌ها');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  return { products, loading, error, itemsPerPage, setItemsPerPage, currentPage, setCurrentPage, sortOrder, setSortOrder, sortDirection, setSortDirection };
+  useEffect(() => {
+    fetchProducts(); // اینجا تابع fetchProducts را فراخوانی کنید
+  }, [currentPage, itemsPerPage, sortOrder, sortDirection]); // وابستگی‌ها را اضافه کنید
+
+  return { products, loading, error, itemsPerPage, setItemsPerPage, currentPage, setCurrentPage, sortOrder, setSortOrder, sortDirection, setSortDirection, fetchProducts }; // تابع fetchProducts را هم به خروجی اضافه کنید
 };

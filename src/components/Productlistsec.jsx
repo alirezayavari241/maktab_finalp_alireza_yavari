@@ -35,7 +35,7 @@ const ProductSlider2 = ({ categoryId }) => {
         {products.map((product) => (
           <div key={product.id} className="flex-none w-64 border-btnbg border-2 p-4 rounded-3xl shadow-lg items-center justify-center">
             <img
-              src={`http://${product.images}`} 
+              src={`http://${product.images[0]}`} 
               alt={product.name}
               className="h-48 w-48 object-cover mb-4 mx-auto"
             />

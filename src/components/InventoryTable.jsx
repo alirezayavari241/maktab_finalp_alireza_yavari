@@ -1,32 +1,69 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Pagination from './Pagination';
 import { sortProducts } from '../utils/sorting';
-import axios from 'axios'; // اضافه کردن axios
+import axios from 'axios'; 
+import { toast, ToastContainer } from 'react-toastify'; 
+import 'react-toastify/dist/ReactToastify.css'; 
 
-const InventoryTable = ({ products, itemsPerPage, setItemsPerPage, currentPage, setCurrentPage, sortOrder, setSortOrder, sortDirection, setSortDirection }) => {
-    const [isEditMode, setIsEditMode] = useState(false); // حالت ویرایش
+const InventoryTable = ({ itemsPerPage, setItemsPerPage, currentPage, setCurrentPage, sortOrder, setSortOrder, sortDirection, setSortDirection }) => {
+    const [products, setProducts] = useState([]); // محصولات از سرور
     const [editableProducts, setEditableProducts] = useState([]); // محصولات قابل ویرایش
+    const [editedProductIds, setEditedProductIds] = useState([]); // محصولات تغییر کرده
     const [loading, setLoading] = useState(false); // حالت بارگذاری
+    const [originalProducts, setOriginalProducts] = useState([]); // ذخیره نسخه اصلی محصولات
+
+    // واکشی محصولات از سرور
+    const fetchProducts = async () => {
+        try {
+            const response = await axios.get('http://localhost:8000/api/products?limit=100');
+            setProducts(response.data.data.products);
+            setEditableProducts(response.data.data.products.map(product => ({ ...product, isEditing: [] }))); // تنظیم اولیه برای editable
+            setOriginalProducts(response.data.data.products); // ذخیره نسخه اصلی محصولات
+        } catch (error) {
+            console.error('خطا در دریافت محصولات:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchProducts(); // واکشی اولیه محصولات
+    }, []);
 
     const sortedProducts = sortProducts(products, sortOrder, sortDirection);
-
     const indexOfLastProduct = currentPage * itemsPerPage;
     const indexOfFirstProduct = indexOfLastProduct - itemsPerPage;
-    const currentProducts = sortedProducts.slice(indexOfFirstProduct, indexOfLastProduct);
-
+    let currentProducts = sortedProducts.slice(indexOfFirstProduct, indexOfLastProduct);
     const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
 
-    // فعال‌سازی حالت ویرایش
-    const handleEditClick = () => {
-        setIsEditMode(true);
-        setEditableProducts(currentProducts.map(product => ({ ...product })));
+    // فعال‌سازی حالت ویرایش با کلیک برای چندین سلول
+    const handleCellClick = (productId, field) => {
+        const updatedProducts = editableProducts.map(product => 
+            product._id === productId
+                ? { ...product, isEditing: [...product.isEditing, field] } // اضافه کردن فیلد به لیست فیلدهای در حال ویرایش
+                : product
+        );
+        setEditableProducts(updatedProducts);
+    };
+
+    // لغو ویرایش با کلید ESC برای همان فیلد
+    const handleKeyDown = (e, productId, field) => {
+        if (e.key === 'Escape') {
+            const updatedProducts = editableProducts.map(product =>
+                product._id === productId
+                    ? { 
+                        ...product, 
+                        isEditing: product.isEditing.filter(f => f !== field), // حذف فیلد از لیست فیلدهای در حال ویرایش
+                        [field]: originalProducts.find(p => p._id === productId)[field] // بازگرداندن مقدار به مقدار اولیه
+                      }
+                    : product
+            );
+            setEditableProducts(updatedProducts);
+        }
     };
 
     // ذخیره‌سازی تغییرات
     const handleSaveClick = async () => {
-        setLoading(true); // شروع حالت بارگذاری
+        setLoading(true); 
         try {
-            // ارسال درخواست patch برای هر محصول ویرایش شده
             const updateRequests = editableProducts.map(product => 
                 axios.patch(`http://localhost:8000/api/products/${product._id}`, {
                     quantity: product.quantity,
@@ -34,12 +71,22 @@ const InventoryTable = ({ products, itemsPerPage, setItemsPerPage, currentPage, 
                 })
             );
             await Promise.all(updateRequests);
-            setIsEditMode(false);
-            console.log('محصولات با موفقیت به‌روزرسانی شدند');
+
+            toast.success('تغییرات با موفقیت ذخیره شد!', { position: "top-right" });
+
+            // خروج از حالت ویرایش برای همه محصولات
+            const updatedProducts = editableProducts.map(product => ({ ...product, isEditing: [] }));
+            setEditableProducts(updatedProducts);
+
+            // واکشی مجدد محصولات برای بروزرسانی جدول
+            await fetchProducts();
+            setEditedProductIds([]); 
+            setLoading(false);
         } catch (error) {
             console.error('خطا در به‌روزرسانی محصولات:', error);
+            toast.error('خطایی رخ داد!', { position: "top-right" });
+            setLoading(false); 
         }
-        setLoading(false); // پایان حالت بارگذاری
     };
 
     // مدیریت تغییر در مقادیر موجودی و قیمت
@@ -48,6 +95,24 @@ const InventoryTable = ({ products, itemsPerPage, setItemsPerPage, currentPage, 
             product._id === productId ? { ...product, [field]: e.target.value } : product
         );
         setEditableProducts(updatedProducts);
+
+        if (!editedProductIds.includes(productId)) {
+            setEditedProductIds([...editedProductIds, productId]);
+        }
+    };
+
+    // بررسی اینکه آیا تغییری نسبت به مقدار اولیه صورت گرفته است یا خیر
+    const hasChanges = (productId, field) => {
+        const originalProduct = originalProducts.find(p => p._id === productId);
+        const editedProduct = editableProducts.find(p => p._id === productId);
+        return originalProduct[field] !== editedProduct[field];
+    };
+
+    // بررسی فعال بودن دکمه ثبت تغییرات
+    const isSaveDisabled = () => {
+        return editedProductIds.length === 0 || !editableProducts.some(product => {
+            return hasChanges(product._id, 'quantity') || hasChanges(product._id, 'price');
+        });
     };
 
     return (
@@ -55,12 +120,15 @@ const InventoryTable = ({ products, itemsPerPage, setItemsPerPage, currentPage, 
         <div className='flex mx-auto  flex-col align-middle items-center w-4/5 h-5/6'>
           <h1 className="text-2xl font-bold mb-4">مدیریت موجودی و قیمت</h1>
           <button
-            onClick={isEditMode ? handleSaveClick : handleEditClick}
-            className={`mb-4 px-4 py-2 ${isEditMode ? 'bg-green-500' : 'bg-blue-500'} text-white rounded`}
-            disabled={loading} // غیرفعال کردن دکمه در حالت بارگذاری
+            onClick={handleSaveClick}
+            className="mb-4 px-4 py-2 bg-green-500 text-white rounded"
+            disabled={loading || isSaveDisabled()} 
           >
-            {loading ? 'در حال ذخیره...' : isEditMode ? 'ذخیره تغییرات' : 'ویرایش موجودی و قیمت‌ها'}
+            {loading ? 'در حال ذخیره...' : 'ذخیره تغییرات'}
           </button>
+
+          <ToastContainer /> {/* نمایش Toast */}
+          
           <Pagination
             totalPages={totalPages}
             currentPage={currentPage}
@@ -72,6 +140,7 @@ const InventoryTable = ({ products, itemsPerPage, setItemsPerPage, currentPage, 
             sortDirection={sortDirection}
             setSortDirection={setSortDirection}
           />
+
           <table className="min-w-full border border-gray-300 mb-4">
             <thead>
               <tr className="bg-gray-100 text-black">
@@ -82,9 +151,13 @@ const InventoryTable = ({ products, itemsPerPage, setItemsPerPage, currentPage, 
             </thead>
             <tbody>
               {currentProducts.map((product) => (
-                <tr key={product._id} className="text-black">
-                  <td className="border border-gray-300 p-2 text-center">
-                    {isEditMode ? (
+                <tr key={product._id} className={`text-black ${editedProductIds.includes(product._id) ? 'bg-yellow-200' : ''}`}>
+                  <td 
+                    className="border border-gray-300 p-2 text-center"
+                    onClick={() => handleCellClick(product._id, 'quantity')}
+                    onKeyDown={(e) => handleKeyDown(e, product._id, 'quantity')}
+                  >
+                    {editableProducts.find(p => p._id === product._id)?.isEditing.includes('quantity') ? (
                       <input
                         type="number"
                         value={
@@ -97,8 +170,12 @@ const InventoryTable = ({ products, itemsPerPage, setItemsPerPage, currentPage, 
                       product.quantity.toLocaleString('fa-IR')
                     )}
                   </td>
-                  <td className="border border-gray-300 p-2 text-center">
-                    {isEditMode ? (
+                  <td 
+                    className="border border-gray-300 p-2 text-center"
+                    onClick={() => handleCellClick(product._id, 'price')}
+                    onKeyDown={(e) => handleKeyDown(e, product._id, 'price')}
+                  >
+                    {editableProducts.find(p => p._id === product._id)?.isEditing.includes('price') ? (
                       <input
                         type="number"
                         value={
@@ -122,3 +199,8 @@ const InventoryTable = ({ products, itemsPerPage, setItemsPerPage, currentPage, 
 };
 
 export default InventoryTable;
+
+
+
+
+

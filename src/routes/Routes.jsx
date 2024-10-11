@@ -5,6 +5,10 @@ import Home from "../pages/Home";
 import AdminPanel from "../pages/Management";
 import ProductDetail from "../pages/ProductDetail";
 import CategoryPage from "../components/ProductCategoryPage";
+import CartPage from "../pages/Cart";
+import OrderCompletionPage from "../pages/SubmitCart";
+import PaymentPage from "../pages/PaymentPage";
+import OrderStatusPage from "../pages/OrderStatus";
 
 const AppRoutes = () => {
     return (
@@ -18,6 +22,10 @@ const AppRoutes = () => {
   <Route path="/productlist/:categoryId" element={<CategoryPage />} />
   <Route path="/productlist/:categoryId/:subcategoryId" element={<CategoryPage />} />
   <Route path="/productlist/subcategory/:subcategoryId" element={<CategoryPage />} />
+  <Route path='/cart' element={<CartPage />} />
+  <Route path='/SubmitCart' element={<OrderCompletionPage />} />
+  <Route path="/payment" element={<PaymentPage/> } />
+  <Route path="/orders/:orderId" element={<OrderStatusPage />} />
 
             </Routes>
         </Router>

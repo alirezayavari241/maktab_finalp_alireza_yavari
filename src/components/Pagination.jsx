@@ -20,7 +20,7 @@ const Pagination = ({ totalPages, currentPage, setCurrentPage, itemsPerPage, set
         <div>
           <label className='flex'>
           <p className='text-textcolot'>محصول در هر صفحه</p>
-            <select value={itemsPerPage} onChange={handleItemsPerPageChange} className="border rounded ml-2">
+            <select value={itemsPerPage} onChange={handleItemsPerPageChange} className="border rounded ml-2 bg-white text-black">
               <option value={5}>5</option>
               <option value={2}>2</option>
               <option value={10}>10</option>
@@ -42,7 +42,7 @@ const Pagination = ({ totalPages, currentPage, setCurrentPage, itemsPerPage, set
       </div>
         <div className='flex flex-col align-middle items-center'>
           <label className='flex w-full'>
-          <select value={sortOrder} onChange={handleSortChange} className="border rounded ml-2 w-fit h-fit">
+          <select value={sortOrder} onChange={handleSortChange} className="border rounded ml-2 w-fit h-fit bg-white text-black">
               <option value="createdAt">تاریخ</option>
               <option value="price">قیمت</option>
               <option value="quantity">موجودی</option>
@@ -52,7 +52,7 @@ const Pagination = ({ totalPages, currentPage, setCurrentPage, itemsPerPage, set
           </label>
 
           <label className="flex w-full justify-between">
-            <select value={sortDirection} onChange={handleDirectionChange} className="border rounded ml-2 w-fit">
+            <select value={sortDirection} onChange={handleDirectionChange} className="border rounded ml-2 w-fit bg-white text-black">
               <option value="asc">صعودی</option>
               <option value="desc">نزولی</option>
             </select>
