@@ -8,9 +8,9 @@ import { ClassicEditor, Bold, Essentials, Italic, Mention, Paragraph, Undo } fro
 import { SlashCommand } from 'ckeditor5-premium-features';
 import 'ckeditor5/ckeditor5.css';
 import 'ckeditor5-premium-features/ckeditor5-premium-features.css';
-const ProductTable = ({ products, itemsPerPage, setItemsPerPage, currentPage, setCurrentPage, sortOrder, setSortOrder, sortDirection, setSortDirection, fetchProducts }) => {
-
+const ProductTable = ({ itemsPerPage, setItemsPerPage, currentPage, setCurrentPage, sortOrder, setSortOrder, sortDirection, setSortDirection }) => {
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [products, setProducts] = useState([]);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false); // Add modal state
@@ -53,7 +53,31 @@ const ProductTable = ({ products, itemsPerPage, setItemsPerPage, currentPage, se
     const filtered = subcategories.filter(subcategory => subcategory.category === selectedCategoryId);
     setFilteredSubcategories(filtered);
   };
+  const fetchProducts = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/api/products?page=1&limit=100');
+      const products = response.data.data.products
+      setProducts(products)
+      sortProducts(products);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    }
+  };
+ 
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
+const handleproduct =async () =>{
+  const sortedProducts = sortProducts(products, sortOrder, sortDirection);
+  
+  const indexOfLastProduct = currentPage * itemsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - itemsPerPage;
+  const currentProducts = sortedProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+
+  const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
+
+}
   const sortedProducts = sortProducts(products, sortOrder, sortDirection);
   
   const indexOfLastProduct = currentPage * itemsPerPage;
@@ -73,16 +97,18 @@ const ProductTable = ({ products, itemsPerPage, setItemsPerPage, currentPage, se
       await axios.delete(`http://localhost:8000/api/products/${selectedProduct._id}`);
       setSelectedProduct(null);
       setIsDeleteModalOpen(false);
-      await fetchProducts();
+       fetchProducts();
       if(Response.status==500){
         setSelectedProduct(null);
         setIsDeleteModalOpen(false);
-        await fetchProducts();
+         fetchProducts();
       }
     } catch (error) {
       console.error('Error deleting product:', error);
     } finally {
       setLoading(false);
+      await fetchProducts();
+
     }
   };
 
@@ -101,7 +127,7 @@ const ProductTable = ({ products, itemsPerPage, setItemsPerPage, currentPage, se
     setLoading(true);
     try {
       const { _id, thumbnail, images, createdAt, updatedAt, slugname, ...productDataToUpdate } = editProductData; 
-      
+      await handleproduct();
       await axios.patch(`http://localhost:8000/api/products/${selectedProduct._id}`, productDataToUpdate);
       setSelectedProduct(null);
       setIsEditModalOpen(false);
@@ -109,19 +135,23 @@ const ProductTable = ({ products, itemsPerPage, setItemsPerPage, currentPage, se
       console.error('Error updating product:', error);
     } finally {
      setLoading(false);
+     await fetchProducts();
+
+
     }
   };
   const handleEditChange1 = (e) => {
     setEditProductData({ ...editProductData, [e.target.name]: e.target.value });
   };
   const handleEditChange2 = (event, editor) => {
-    const data = editor.getData(); // دریافت داده‌های ویرایش شده
-    setEditProductData({ ...editProductData, description: data }); // به‌روزرسانی state
+    const data = editor.getData(); 
+    setEditProductData({ ...editProductData, description: data });
   };
 
   const handleAddChange = (event, editor) => {
-    const data = editor.getData(); // دریافت داده‌های ویرایش شده
-    setAddProductData({...addProductData, description: data }); // به‌روزرسانی state
+    handleinputs()
+    const data = editor.getData();
+    setAddProductData({...addProductData, description: data }); 
   };
 
   const handleAddSubmit = async () => {
@@ -151,15 +181,12 @@ const ProductTable = ({ products, itemsPerPage, setItemsPerPage, currentPage, se
 
       setAddProductData({}); 
       setIsAddModalOpen(false);
-      await fetchProducts(); 
+       fetchProducts(); 
       console.error('Error adding product:', error);
     } finally {
       setLoading(false);
     }
   };
-
-
-
   return (
     <>
       <div className='flex mx-auto flex-col align-middle items-center w-4/5 h-5/6'>
@@ -230,7 +257,6 @@ const ProductTable = ({ products, itemsPerPage, setItemsPerPage, currentPage, se
         </div>
       )}
 
-      {/* Edit Modal */}
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center">
           <div className="bg-white p-4 px-4 rounded-lg mx-auto items-center justify-center align-middle flex flex-col overflow-scroll">
@@ -283,7 +309,7 @@ const ProductTable = ({ products, itemsPerPage, setItemsPerPage, currentPage, se
                <CKEditor
         editor={ClassicEditor}
         data={editProductData.description}
-        onChange={handleEditChange2} // تغییرات
+        onChange={handleEditChange2} 
             config={ {
                 toolbar: {
                     items: [ 'undo', 'redo', '|', 'bold', 'italic' ],
@@ -335,7 +361,7 @@ const ProductTable = ({ products, itemsPerPage, setItemsPerPage, currentPage, se
 </svg>
 نام کالا</label>
 
-                <input type="text" name="name" value={addProductData.name || ''} onChange={handleAddChange} className="mt-1block p-1  w-full border-gray-500 border-2 rounded-md shadow-sm bg-white" />
+                <input type="text" name="name" value={addProductData.name || ''} onChange={handleAddChange}     className='mt-1 block p-1 w-full border-2 rounded-md shadow-sm bg-white '  />
               </div>
               <div className="mb-2 justify-center mx-auto">
                 <label className="flex text-sm font-medium text-gray-700 text-right justify-between"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
@@ -374,8 +400,8 @@ const ProductTable = ({ products, itemsPerPage, setItemsPerPage, currentPage, se
                   <div className=''>
                   <CKEditor
                           editor={ClassicEditor}
-                          data={addProductData.description} // مقدار پیش‌فرض
-                          onChange={handleAddChange} // تغییرات
+                          data={addProductData.description}
+                          onChange={handleAddChange}
             config={ {
                 toolbar: {
                     items: [ 'undo', 'redo', '|', 'bold', 'italic' ],

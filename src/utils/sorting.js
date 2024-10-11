@@ -6,4 +6,3 @@ export const sortProducts = (products, sortOrder, sortDirection) => {
       return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
     });
   };
-  

@@ -12,7 +12,6 @@ const InventoryTable = ({ itemsPerPage, setItemsPerPage, currentPage, setCurrent
     const [loading, setLoading] = useState(false); // حالت بارگذاری
     const [originalProducts, setOriginalProducts] = useState([]); // ذخیره نسخه اصلی محصولات
 
-    // واکشی محصولات از سرور
     const fetchProducts = async () => {
         try {
             const response = await axios.get('http://localhost:8000/api/products?limit=100');
@@ -25,7 +24,7 @@ const InventoryTable = ({ itemsPerPage, setItemsPerPage, currentPage, setCurrent
     };
 
     useEffect(() => {
-        fetchProducts(); // واکشی اولیه محصولات
+        fetchProducts();  
     }, []);
 
     const sortedProducts = sortProducts(products, sortOrder, sortDirection);
@@ -34,25 +33,23 @@ const InventoryTable = ({ itemsPerPage, setItemsPerPage, currentPage, setCurrent
     let currentProducts = sortedProducts.slice(indexOfFirstProduct, indexOfLastProduct);
     const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
 
-    // فعال‌سازی حالت ویرایش با کلیک برای چندین سلول
     const handleCellClick = (productId, field) => {
         const updatedProducts = editableProducts.map(product => 
             product._id === productId
-                ? { ...product, isEditing: [...product.isEditing, field] } // اضافه کردن فیلد به لیست فیلدهای در حال ویرایش
+                ? { ...product, isEditing: [...product.isEditing, field] } 
                 : product
         );
         setEditableProducts(updatedProducts);
     };
 
-    // لغو ویرایش با کلید ESC برای همان فیلد
     const handleKeyDown = (e, productId, field) => {
         if (e.key === 'Escape') {
             const updatedProducts = editableProducts.map(product =>
                 product._id === productId
                     ? { 
                         ...product, 
-                        isEditing: product.isEditing.filter(f => f !== field), // حذف فیلد از لیست فیلدهای در حال ویرایش
-                        [field]: originalProducts.find(p => p._id === productId)[field] // بازگرداندن مقدار به مقدار اولیه
+                        isEditing: product.isEditing.filter(f => f !== field), 
+                        [field]: originalProducts.find(p => p._id === productId)[field] 
                       }
                     : product
             );
@@ -60,7 +57,6 @@ const InventoryTable = ({ itemsPerPage, setItemsPerPage, currentPage, setCurrent
         }
     };
 
-    // ذخیره‌سازی تغییرات
     const handleSaveClick = async () => {
         setLoading(true); 
         try {
@@ -73,12 +69,8 @@ const InventoryTable = ({ itemsPerPage, setItemsPerPage, currentPage, setCurrent
             await Promise.all(updateRequests);
 
             toast.success('تغییرات با موفقیت ذخیره شد!', { position: "top-right" });
-
-            // خروج از حالت ویرایش برای همه محصولات
             const updatedProducts = editableProducts.map(product => ({ ...product, isEditing: [] }));
             setEditableProducts(updatedProducts);
-
-            // واکشی مجدد محصولات برای بروزرسانی جدول
             await fetchProducts();
             setEditedProductIds([]); 
             setLoading(false);
@@ -89,7 +81,6 @@ const InventoryTable = ({ itemsPerPage, setItemsPerPage, currentPage, setCurrent
         }
     };
 
-    // مدیریت تغییر در مقادیر موجودی و قیمت
     const handleInputChange = (e, productId, field) => {
         const updatedProducts = editableProducts.map(product => 
             product._id === productId ? { ...product, [field]: e.target.value } : product
@@ -101,14 +92,12 @@ const InventoryTable = ({ itemsPerPage, setItemsPerPage, currentPage, setCurrent
         }
     };
 
-    // بررسی اینکه آیا تغییری نسبت به مقدار اولیه صورت گرفته است یا خیر
     const hasChanges = (productId, field) => {
         const originalProduct = originalProducts.find(p => p._id === productId);
         const editedProduct = editableProducts.find(p => p._id === productId);
         return originalProduct[field] !== editedProduct[field];
     };
 
-    // بررسی فعال بودن دکمه ثبت تغییرات
     const isSaveDisabled = () => {
         return editedProductIds.length === 0 || !editableProducts.some(product => {
             return hasChanges(product._id, 'quantity') || hasChanges(product._id, 'price');
